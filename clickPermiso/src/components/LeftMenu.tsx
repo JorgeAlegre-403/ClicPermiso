@@ -4,7 +4,7 @@ import { CiCalendar, CiCalendarDate } from "react-icons/ci";
 import { VscAccount } from "react-icons/vsc";
 
 const LeftMenu = () => {
-    const clases = "flex items-center gap-2 px-3 py-2 rounded-lg active:bg-blue-400";
+    const clases = "flex items-center gap-2 px-3 py-2 rounded-lg focus:bg-blue-300";
 
     return (
         <aside className="w-64 bg-white shadow-md px-4 py-6">
@@ -21,12 +21,7 @@ const LeftMenu = () => {
                 <NavLink
                     to="/diurno" className={clases}>
                     <CiCalendarDate />
-                    Sol. día diurno
-                </NavLink>
-
-                <NavLink to="/vespertino" className={clases}>
-                    <CiCalendarDate />
-                    Sol. día vespertino
+                    Solicitar día
                 </NavLink>
 
                 <NavLink to="/perfil" className={clases}>

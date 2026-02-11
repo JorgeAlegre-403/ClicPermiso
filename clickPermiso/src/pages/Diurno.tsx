@@ -1,5 +1,11 @@
-const Diurno = () => {
-    return <h2 className="text-xl font-semibold">Solicitud día diurno</h2>;
-};
+import Form_SolicitarDia from "../components/solicitar_dia/Form_SolicitarDia"
 
-export default Diurno;
+const Diurno = () => {
+    return (
+        <div>
+            <Form_SolicitarDia></Form_SolicitarDia>
+        </div>
+    )
+}
+
+export default Diurno
