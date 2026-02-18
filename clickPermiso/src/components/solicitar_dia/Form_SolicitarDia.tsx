@@ -43,8 +43,8 @@ const Form_SolicitarDia = () => {
             name="diaSolicitado"
             value={formData.diaSolicitado}
             onChange={manejarCambio}
-            regex={/^/}
-            mensajeError=""
+            regex={/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):([0-5]\d)$/}
+            mensajeError="Debes selecionar un dia valido"
           />
 
           <Input
@@ -108,7 +108,7 @@ const Form_SolicitarDia = () => {
         <hr />
         <div className='flex justify-end gap-4 mt-2 '>
           <button className='bg-gray-200 cursor-pointer rounded-xl h-12 w-30'>Cancelar</button>
-          <button type="submit" className='bg-blue-500 w-50 cursor-pointer text-white rounded-xl '>Guardar solicitud</button>
+          <button type="submit" className='bg-indigo-800 font-bold w-50 cursor-pointer text-white rounded-xl '>Guardar solicitud</button>
         </div>
       </form>
     </>

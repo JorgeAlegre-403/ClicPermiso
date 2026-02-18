@@ -1,9 +1,9 @@
 import { Routes, Route } from "react-router-dom";
 import Header from "./Header";
 
-import Diurno from "../pages/Diurno";
+import SolicitarDias from "../pages/SolicitarDias";
 import Perfil from "../pages/Perfil";
-import Dias from "../pages/Dias";
+import DiasSolicitados from "../pages/DiasSolicitado";
 
 const MainContent = () => {
   return (
@@ -12,12 +12,12 @@ const MainContent = () => {
 
       <div className="h-fit bg-white rounded-2xl shadow-sm p-6">
         <Routes>
-          <Route path="/diurno" element={<Diurno />} />
-          <Route path="/dias" element={<Dias />} />
+          <Route path="/solicitar" element={<SolicitarDias />} />
           <Route path="/perfil" element={<Perfil />} />
+          <Route path="/dias" element={<DiasSolicitados />} />
 
           {/* Ruta por defecto */}
-          <Route path="*" element={<Diurno />} />
+          <Route path="*" element={<SolicitarDias />} />
         </Routes>
       </div>
     </main>

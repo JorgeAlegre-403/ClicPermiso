@@ -1,5 +1,13 @@
-const Perfil = () => {
-  return <h2 className="text-xl font-semibold">Mi perfil</h2>;
-};
+import Form_MiPerfil from "../components/mi_perfil/Form_MiPerfil"
+import UsuarioClient from "../components/mi_perfil/UsuarioClient"
 
-export default Perfil;
+const Perfil = () => {
+  return (
+    <div>
+      <Form_MiPerfil></Form_MiPerfil>
+      <UsuarioClient></UsuarioClient>
+    </div>
+  )
+}
+
+export default Perfil
