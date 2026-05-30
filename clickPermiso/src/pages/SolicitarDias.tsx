@@ -1,10 +1,8 @@
 import { useState, useRef } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
-import { supabase } from '../supabaseClient';
-import Input from '../components/ui/Input';
-import Select from '../components/ui/Select';
-import { FiCalendar, FiSend, FiPaperclip } from 'react-icons/fi';
+import { solicitudApi } from '../api/apiClient';
+import { FiSend, FiPaperclip, FiCalendar, FiClock, FiPhone, FiInfo, FiTrash2, FiDownload, FiCheckCircle } from 'react-icons/fi';
 
 const SolicitarDias = () => {
   const { user } = useAuthStore();
@@ -23,7 +21,9 @@ const SolicitarDias = () => {
     motivo: '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -31,7 +31,6 @@ const SolicitarDias = () => {
     e.preventDefault();
     if (!user) return;
 
-    // Validaciones
     if (!formData.diaSolicitado) {
       addToast('Debes seleccionar una fecha', 'error');
       return;
@@ -40,7 +39,6 @@ const SolicitarDias = () => {
     const selectedDate = new Date(formData.diaSolicitado);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     if (selectedDate < today) {
       addToast('No puedes solicitar permisos para fechas pasadas', 'error');
       return;
@@ -53,7 +51,6 @@ const SolicitarDias = () => {
 
     const numHoras = parseInt(formData.numHoras);
     const numDias = parseInt(formData.numDias);
-
     if (numHoras <= 0 || numDias <= 0) {
       addToast('El número de horas y días debe ser mayor a 0', 'error');
       return;
@@ -70,51 +67,31 @@ const SolicitarDias = () => {
     }
 
     if (archivo && archivo.size > 5 * 1024 * 1024) {
-      addToast('El archivo no debe superar 5MB', 'error');
+      addToast('El archivo no debe superar 5 MB', 'error');
       return;
     }
 
     setLoading(true);
     try {
-      let archivoUrl = null;
-
-      if (archivo) {
-        const fileExt = archivo.name.split('.').pop();
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        const { error: uploadError, data } = await supabase.storage
-          .from('documentos')
-          .upload(fileName, archivo);
-
-        if (uploadError) {
-          console.error('Error uploading file:', uploadError);
-          addToast('No se pudo subir el archivo. Continúa sin él o intenta después.', 'warning');
-        } else {
-          archivoUrl = data?.path;
-        }
-      }
-
-      const { error } = await supabase.from('solicitudes').insert([
+      await solicitudApi.create(
         {
-          usuario_id: user.id,
-          dia_solicitado: formData.diaSolicitado,
+          diaSolicitado: formData.diaSolicitado,
           telefono: formData.telefono,
           turno: formData.turno,
           jornada: formData.jornada,
-          num_horas: numHoras,
-          num_dias: numDias,
-          permiso_no_retribuido: formData.permisoNoRetribuido,
+          numHoras: numHoras,
+          numDias: numDias,
+          permisoNoRetribuido: formData.permisoNoRetribuido,
           motivo: formData.motivo.trim(),
-          archivo_adjunto: archivoUrl,
-          estado: 'pendiente',
         },
-      ]);
+        archivo,
+      );
 
-      if (error) throw error;
-
-      addToast('Solicitud enviada con éxito 📩', 'success');
+      addToast('Solicitud enviada con éxito', 'success');
       handleReset();
-    } catch (err: any) {
-      addToast('Error al enviar: ' + (err.message || 'Intenta de nuevo'), 'error');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Intenta de nuevo';
+      addToast('Error al enviar: ' + msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -136,152 +113,161 @@ const SolicitarDias = () => {
   };
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-4xl mx-auto p-4">
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-slate-800">Solicitar día de permiso</h2>
-        <p className="text-sm text-slate-500 mt-1">Cumplimenta los datos para registrar tu ausencia en Jefatura.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Nueva Solicitud</h1>
+        <p className="text-slate-500 text-sm">Completa los datos para registrar tu ausencia.</p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl p-6">
-        <form onSubmit={handleSubmit} className="space-y-8">
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Input
-              label="Día solicitado"
-              type="date"
-              name="diaSolicitado"
-              value={formData.diaSolicitado}
-              onChange={handleChange}
-              required
-            />
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <h2 className="text-sm font-bold text-slate-900 mb-6 flex items-center gap-2">
+              <FiCalendar className="text-slate-400" />
+              Datos del Permiso
+            </h2>
 
-            <Select
-              label="Turno"
-              name="turno"
-              value={formData.turno}
-              onChange={handleChange}
-              required
-              options={[
-                { label: 'Diurno', value: 'Diurno' },
-                { label: 'Vespertino', value: 'Vespertino' },
-              ]}
-            />
-
-            <Select
-              label="Jornada"
-              name="jornada"
-              value={formData.jornada}
-              onChange={handleChange}
-              required
-              options={[
-                { label: 'Completa', value: 'Completa' },
-                { label: 'Parcial', value: 'Parcial' },
-              ]}
-            />
-
-            <Input
-              label="Teléfono de contacto"
-              type="tel"
-              name="telefono"
-              value={formData.telefono}
-              onChange={handleChange}
-              placeholder="600000000"
-              required
-            />
-
-            <Input
-              label="Horas lectivas afectadas"
-              type="number"
-              name="numHoras"
-              value={formData.numHoras}
-              onChange={handleChange}
-              required
-            />
-
-            <Input
-              label="Días totales solicitados"
-              type="number"
-              name="numDias"
-              value={formData.numDias}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="space-y-6 pt-4 border-t border-slate-100">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Motivo de la ausencia *
-              </label>
-              <textarea
-                name="motivo"
-                value={formData.motivo}
-                onChange={handleChange}
-                required
-                rows={3}
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-400 focus:bg-white bg-slate-50 resize-none"
-                placeholder="Explica brevemente el motivo de tu solicitud..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Documentación justificativa (Opcional)
-              </label>
-              <div className="flex items-center gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-500 uppercase">Fecha</label>
                 <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={(e) => setArchivo(e.target.files?.[0] || null)}
-                  className="hidden"
-                  accept=".pdf,.jpg,.jpeg,.png"
+                  type="date" name="diaSolicitado" required
+                  value={formData.diaSolicitado} onChange={handleChange}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-slate-400 outline-none transition-all"
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50"
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-500 uppercase">Teléfono</label>
+                <input
+                  type="tel" name="telefono" required placeholder="600000000"
+                  value={formData.telefono} onChange={handleChange}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-slate-400 outline-none transition-all"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-500 uppercase">Turno</label>
+                <select
+                  name="turno" required value={formData.turno} onChange={handleChange}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-slate-400 outline-none transition-all"
                 >
-                  <FiPaperclip />
-                  Seleccionar archivo
-                </button>
-                <span className="text-sm text-slate-500">
-                  {archivo ? archivo.name : 'Ningún archivo seleccionado'}
-                </span>
+                  <option value="">Seleccionar...</option>
+                  <option value="Diurno">Diurno</option>
+                  <option value="Vespertino">Vespertino</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-500 uppercase">Jornada</label>
+                <select
+                  name="jornada" required value={formData.jornada} onChange={handleChange}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-slate-400 outline-none transition-all"
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="Completa">Completa</option>
+                  <option value="Parcial">Parcial</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-500 uppercase">Horas</label>
+                <input
+                  type="number" name="numHoras" required placeholder="0"
+                  value={formData.numHoras} onChange={handleChange}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-slate-400 outline-none transition-all"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-500 uppercase">Días</label>
+                <input
+                  type="number" name="numDias" required placeholder="0"
+                  value={formData.numDias} onChange={handleChange}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-slate-400 outline-none transition-all"
+                />
               </div>
             </div>
+          </div>
 
-            <label className="flex items-center gap-3 cursor-pointer mt-4">
+          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <h2 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <FiInfo className="text-slate-400" />
+              Motivo
+            </h2>
+            <textarea
+              name="motivo" required rows={3}
+              value={formData.motivo} onChange={handleChange}
+              placeholder="Explica brevemente el motivo..."
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-slate-400 outline-none transition-all resize-none"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <h2 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <FiPaperclip className="text-slate-400" />
+              Adjuntos
+            </h2>
+            <div 
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all
+                ${archivo ? 'border-slate-800 bg-slate-50' : 'border-slate-200 hover:border-slate-400'}`}
+            >
+              <input
+                type="file" ref={fileInputRef} className="hidden"
+                onChange={(e) => setArchivo(e.target.files?.[0] || null)}
+                accept=".pdf,.jpg,.jpeg,.png"
+              />
+              {archivo ? (
+                <div className="text-xs">
+                  <FiCheckCircle size={24} className="mx-auto text-slate-800 mb-2" />
+                  <p className="font-semibold truncate">{archivo.name}</p>
+                  <button 
+                    type="button" 
+                    onClick={(e) => { e.stopPropagation(); setArchivo(null); }}
+                    className="mt-2 text-red-500 font-bold hover:underline"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              ) : (
+                <div className="text-xs text-slate-400">
+                  <FiDownload size={24} className="mx-auto mb-2" />
+                  <p>Subir justificante</p>
+                  <p className="mt-1">(PDF, JPG, PNG)</p>
+                </div>
+              )}
+            </div>
+
+            <label className="mt-6 flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.permisoNoRetribuido}
                 onChange={(e) => setFormData({ ...formData, permisoNoRetribuido: e.target.checked })}
-                className="w-4 h-4 text-blue-500 border-slate-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-0"
               />
-              <span className="text-sm font-medium text-slate-700">
-                El permiso solicitado es no retribuido
-              </span>
+              <span className="text-xs font-semibold text-slate-700">Permiso no retribuido</span>
             </label>
           </div>
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="space-y-3">
             <button
-              type="button"
-              onClick={handleReset}
-              className="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50"
+              type="submit" disabled={loading}
+              className="btn-primary w-full flex items-center justify-center gap-2"
             >
-              Borrar
+              {loading ? 'Enviando...' : <><FiSend size={16} /> Enviar Solicitud</>}
             </button>
             <button
-              type="submit"
-              disabled={loading}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 disabled:opacity-50"
+              type="button" onClick={handleReset}
+              className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
             >
-              <FiSend />
-              {loading ? 'Enviando...' : 'Enviar solicitud'}
+              Limpiar formulario
             </button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   );
 };

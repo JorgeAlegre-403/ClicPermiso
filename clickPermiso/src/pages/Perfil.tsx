@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { useToastStore } from '../stores/toastStore';
-import { supabase } from '../supabaseClient';
-import Input from '../components/ui/Input';
-import Select from '../components/ui/Select';
+import { perfilApi } from '../api/apiClient';
+import { FiUser, FiMail, FiCreditCard, FiBriefcase, FiAward, FiEdit3, FiSave, FiX, FiCheckCircle } from 'react-icons/fi';
 
 const Perfil = () => {
   const { perfil, fetchPerfil } = useAuthStore();
@@ -15,12 +14,11 @@ const Perfil = () => {
     apellidos: perfil?.apellidos || '',
     email: perfil?.email || '',
     dni: perfil?.dni || '',
-    rel_juridica: perfil?.rel_juridica || '',
-    anios_servicio: perfil?.anios_servicio?.toString() || '',
-    hace_sustitucion: perfil?.hace_sustitucion || false,
+    relJuridica: perfil?.relJuridica || '',
+    aniosServicio: perfil?.aniosServicio?.toString() || '',
+    haceSustitucion: perfil?.haceSustitucion || false,
   });
 
-  // Actualizar formData cuando perfil cambia
   useEffect(() => {
     if (perfil) {
       setFormData({
@@ -28,14 +26,16 @@ const Perfil = () => {
         apellidos: perfil.apellidos || '',
         email: perfil.email || '',
         dni: perfil.dni || '',
-        rel_juridica: perfil.rel_juridica || '',
-        anios_servicio: perfil.anios_servicio?.toString() || '',
-        hace_sustitucion: perfil.hace_sustitucion || false,
+        relJuridica: perfil.relJuridica || '',
+        aniosServicio: perfil.aniosServicio?.toString() || '',
+        haceSustitucion: perfil.haceSustitucion || false,
       });
     }
   }, [perfil, editing]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -45,143 +45,171 @@ const Perfil = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('perfiles')
-        .update({
-          nombre: formData.nombre,
-          apellidos: formData.apellidos,
-          dni: formData.dni,
-          rel_juridica: formData.rel_juridica,
-          anios_servicio: parseInt(formData.anios_servicio) || 0,
-          hace_sustitucion: formData.hace_sustitucion,
-        })
-        .eq('id', perfil.id);
+      await perfilApi.updateMe({
+        nombre: formData.nombre,
+        apellidos: formData.apellidos,
+        dni: formData.dni,
+        relJuridica: formData.relJuridica,
+        aniosServicio: parseInt(formData.aniosServicio) || 0,
+        haceSustitucion: formData.haceSustitucion,
+      });
 
-      if (error) throw error;
-
-      addToast('Perfil guardado', 'success');
+      addToast('Perfil actualizado correctamente', 'success');
       await fetchPerfil();
       setEditing(false);
-    } catch (err: any) {
-      addToast('Error: ' + err.message, 'error');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error desconocido';
+      addToast('Error: ' + msg, 'error');
     } finally {
       setLoading(false);
     }
   };
 
+  if (!perfil) return null;
+
   return (
-    <div className="max-w-4xl">
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-4xl mx-auto p-4">
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-slate-800">Mi Perfil</h2>
-          <p className="text-sm text-slate-500 mt-1">Información corporativa y laboral.</p>
+          <h1 className="text-2xl font-bold text-slate-900">Mi Perfil</h1>
+          <p className="text-slate-500 text-sm">Información personal y profesional.</p>
         </div>
         {!editing && (
           <button
             onClick={() => setEditing(true)}
-            className="px-4 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50"
+            className="btn-primary flex items-center gap-2 text-sm"
           >
-            Editar datos
+            <FiEdit3 size={16} /> Editar Datos
           </button>
         )}
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        {!editing && perfil ? (
-          <div className="divide-y divide-slate-100">
-            <div className="grid grid-cols-1 sm:grid-cols-3 p-5">
-              <div className="text-sm font-medium text-slate-500">Nombre completo</div>
-              <div className="sm:col-span-2 text-sm text-slate-800">{perfil.nombre} {perfil.apellidos}</div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 p-5">
-              <div className="text-sm font-medium text-slate-500">Correo corporativo</div>
-              <div className="sm:col-span-2 text-sm text-slate-800">{perfil.email}</div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 p-5">
-              <div className="text-sm font-medium text-slate-500">DNI / Identificación</div>
-              <div className="sm:col-span-2 text-sm text-slate-800">{perfil.dni || '—'}</div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 p-5">
-              <div className="text-sm font-medium text-slate-500">Relación jurídica</div>
-              <div className="sm:col-span-2 text-sm text-slate-800">{perfil.rel_juridica || '—'}</div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 p-5">
-              <div className="text-sm font-medium text-slate-500">Años de servicio</div>
-              <div className="sm:col-span-2 text-sm text-slate-800">{perfil.anios_servicio || 0} años</div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 p-5">
-              <div className="text-sm font-medium text-slate-500">Rol en el sistema</div>
-              <div className="sm:col-span-2 text-sm text-slate-800 capitalize">{perfil.rol}</div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 p-5 bg-slate-50/50">
-              <div className="text-sm font-medium text-slate-500">Sustituciones</div>
-              <div className="sm:col-span-2">
-                <span className={`px-2 py-0.5 rounded text-xs font-medium border
-                  ${perfil.hace_sustitucion ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-slate-100 text-slate-500 border-slate-200'}
-                `}>
-                  {perfil.hace_sustitucion ? 'Habilitado' : 'Deshabilitado'}
-                </span>
+      <div className="grid grid-cols-1 gap-6">
+        <div className="bg-slate-900 rounded-xl p-8 text-white flex flex-col sm:flex-row items-center gap-6">
+          <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center text-3xl font-bold border border-white/20">
+            {perfil.nombre.charAt(0)}
+          </div>
+          <div className="text-center sm:text-left">
+            <span className="inline-block px-2 py-0.5 bg-white/10 rounded text-[10px] font-bold uppercase tracking-wider mb-2 border border-white/10">
+              {perfil.rol}
+            </span>
+            <h2 className="text-2xl font-bold leading-none mb-1">{perfil.nombre} {perfil.apellidos}</h2>
+            <p className="text-slate-400 text-sm flex items-center justify-center sm:justify-start gap-2">
+              <FiMail size={14} /> {perfil.email}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          {!editing ? (
+            <div className="p-6 sm:p-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                <InfoItem icon={<FiCreditCard />} label="DNI" value={perfil.dni} />
+                <InfoItem icon={<FiBriefcase />} label="Relación Jurídica" value={perfil.relJuridica} />
+                <InfoItem icon={<FiAward />} label="Años de Servicio" value={`${perfil.aniosServicio} años`} />
+                <InfoItem 
+                  icon={<FiCheckCircle />} 
+                  label="Sustituciones" 
+                  value={perfil.haceSustitucion ? 'Activo' : 'Inactivo'} 
+                  isBadge
+                  badgeColor={perfil.haceSustitucion ? 'emerald' : 'slate'}
+                />
+              </div>
+              
+              <div className="mt-8 pt-6 border-t border-slate-100">
+                <div className="bg-slate-50 rounded-lg p-4 flex gap-3 border border-slate-100">
+                  <FiUser className="text-slate-400 mt-0.5" />
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Mantén tus datos actualizados para una correcta gestión de tus solicitudes por parte de Jefatura.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <Input label="Nombre" name="nombre" value={formData.nombre} onChange={handleChange} required />
-               <Input label="Apellidos" name="apellidos" value={formData.apellidos} onChange={handleChange} required />
-               <Input label="Correo (Lectura)" name="email" value={formData.email} onChange={handleChange} disabled />
-               <Input label="DNI" name="dni" value={formData.dni} onChange={handleChange} />
-               
-               <Select
-                  label="Relación jurídica"
-                  name="rel_juridica"
-                  value={formData.rel_juridica}
-                  onChange={handleChange}
-                  options={[
-                    { label: 'Funcionario Carrera', value: 'Funcionario Carrera' },
-                    { label: 'Funcionario Prácticas', value: 'Funcionario Prácticas' },
-                    { label: 'Interino', value: 'Interino' },
-                    { label: 'Otro', value: 'Otro' },
-                  ]}
-                />
-               <Input label="Años de servicio" type="number" name="anios_servicio" value={formData.anios_servicio} onChange={handleChange} />
-            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormInput label="Nombre" name="nombre" value={formData.nombre} onChange={handleChange} required />
+                <FormInput label="Apellidos" name="apellidos" value={formData.apellidos} onChange={handleChange} required />
+                <FormInput label="Email" name="email" value={formData.email} disabled />
+                <FormInput label="DNI" name="dni" value={formData.dni} onChange={handleChange} />
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase">Relación Jurídica</label>
+                  <select 
+                    name="relJuridica" value={formData.relJuridica} onChange={handleChange}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none"
+                  >
+                    <option value="Funcionario Carrera">Funcionario Carrera</option>
+                    <option value="Funcionario Prácticas">Funcionario Prácticas</option>
+                    <option value="Interino">Interino</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+                <FormInput label="Años de Servicio" type="number" name="aniosServicio" value={formData.aniosServicio} onChange={handleChange} />
+              </div>
 
-            <div className="py-4 border-t border-b border-slate-100">
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.hace_sustitucion}
-                  onChange={(e) => setFormData({ ...formData, hace_sustitucion: e.target.checked })}
-                  className="w-4 h-4 text-blue-500 border-slate-300 rounded focus:ring-blue-500"
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">Sustituciones</h4>
+                  <p className="text-[11px] text-slate-500">¿Deseas realizar sustituciones lectivas?</p>
+                </div>
+                <input 
+                  type="checkbox" checked={formData.haceSustitucion} 
+                  onChange={(e) => setFormData({ ...formData, haceSustitucion: e.target.checked })}
+                  className="w-5 h-5 rounded border-slate-300 text-slate-900 focus:ring-0"
                 />
-                <span className="text-sm font-medium text-slate-700">
-                  Habilitar realización de sustituciones lectivas
-                </span>
-              </label>
-            </div>
+              </div>
 
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setEditing(false)}
-                className="px-5 py-2.5 rounded-lg border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-5 py-2.5 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 disabled:opacity-50"
-              >
-                {loading ? 'Guardando...' : 'Guardar perfil'}
-              </button>
-            </div>
-          </form>
-        )}
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditing(false)}
+                  className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary text-sm px-6"
+                >
+                  {loading ? 'Guardando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );
 };
+
+const InfoItem = ({ icon, label, value, isBadge, badgeColor }: any) => (
+  <div className="flex items-start gap-3">
+    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-400 flex items-center justify-center shrink-0 border border-slate-100">
+      {icon}
+    </div>
+    <div>
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
+      {isBadge ? (
+        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border mt-1 inline-block
+          ${badgeColor === 'emerald' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+          {value || '—'}
+        </span>
+      ) : (
+        <p className="text-sm font-semibold text-slate-800">{value || '—'}</p>
+      )}
+    </div>
+  </div>
+);
+
+const FormInput = ({ label, ...props }: any) => (
+  <div className="space-y-1">
+    <label className="text-[11px] font-bold text-slate-500 uppercase">{label}</label>
+    <input 
+      {...props}
+      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm outline-none focus:border-slate-400 transition-all disabled:opacity-50"
+    />
+  </div>
+);
 
 export default Perfil;
