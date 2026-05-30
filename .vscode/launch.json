@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-ApiClicpermisoApplication<api_clicpermiso>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.jorge.api_clicpermiso.ApiClicpermisoApplication",
+            "projectName": "api_clicpermiso",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

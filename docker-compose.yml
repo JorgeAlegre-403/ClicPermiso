@@ -1,0 +1,14 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_clicpermiso
+    ports:
+      - "3307:3306"  # Usamos el 3307 hacia afuera
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: clicpermiso
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
