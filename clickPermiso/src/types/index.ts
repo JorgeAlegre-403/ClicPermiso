@@ -5,27 +5,42 @@ export interface Perfil {
   email: string;
   dni: string;
   rol: 'docente' | 'directivo';
-  rel_juridica: string;
-  anios_servicio: number;
-  hace_sustitucion: boolean;
-  consentimiento_rgpd: boolean;
-  created_at: string;
+  relJuridica: string;
+  aniosServicio: number;
+  haceSustitucion: boolean;
+  consentimientoRgpd: boolean;
+  createdAt: string;
+}
+
+export interface PerfilResumen {
+  nombre: string;
+  apellidos: string;
+  email: string;
+  dni?: string | null;
 }
 
 export interface Solicitud {
   id: number;
-  usuario_id: string;
-  dia_solicitado: string;
+  usuarioId: string;
+  diaSolicitado: string;
   telefono: string;
   turno: 'Diurno' | 'Vespertino';
   jornada: 'Completa' | 'Parcial';
-  num_horas: number;
-  num_dias: number;
-  permiso_no_retribuido: boolean;
+  numHoras: number;
+  numDias: number;
+  permisoNoRetribuido: boolean;
   motivo: string;
-  archivo_adjunto: string | null;
+  archivoAdjunto: string | null;
   estado: 'pendiente' | 'aprobada' | 'rechazada';
-  motivo_rechazo: string | null;
-  created_at: string;
-  perfiles?: Perfil;
+  motivoRechazo: string | null;
+  createdAt: string;
+  perfiles?: PerfilResumen;
+}
+
+export interface DashboardStats {
+  total: number;
+  pendientes: number;
+  aprobadas: number;
+  rechazadas: number;
+  profesores: number;
 }
