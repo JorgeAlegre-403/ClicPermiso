@@ -1,74 +1,71 @@
 import { create } from 'zustand';
-import { supabase } from '../supabaseClient';
-import type { User, Session } from '@supabase/supabase-js';
+import { authApi, perfilApi } from '../api/apiClient';
 import type { Perfil } from '../types';
 
+interface AuthUser {
+  id: string;
+  email: string;
+}
+
 interface AuthState {
-  user: User | null;
-  session: Session | null;
+  user: AuthUser | null;
   perfil: Perfil | null;
-  loading: boolean;
   initialized: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null }>;
-  logout: () => Promise<void>;
+  logout: () => void;
   fetchPerfil: () => Promise<void>;
   initialize: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  session: null,
   perfil: null,
-  loading: false,
   initialized: false,
 
   initialize: async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        set({ user: session.user, session });
-        await get().fetchPerfil();
-      }
-    } catch (error) {
-      console.error('Error initializing auth:', error);
-    } finally {
-      set({ initialized: true });
-    }
+    const token   = localStorage.getItem('token');
+    const userStr = localStorage.getItem('auth_user');
 
-    supabase.auth.onAuthStateChange(async (_event, session) => {
-      set({ user: session?.user ?? null, session });
-      if (session?.user) {
+    if (token && userStr) {
+      try {
+        const user = JSON.parse(userStr) as AuthUser;
+        set({ user });
         await get().fetchPerfil();
-      } else {
-        set({ perfil: null });
+      } catch {
+        localStorage.removeItem('token');
+        localStorage.removeItem('auth_user');
       }
-    });
+    }
+    set({ initialized: true });
   },
 
   login: async (email, password) => {
-    set({ loading: true });
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    set({ loading: false });
-    return { error: error?.message ?? null };
+    try {
+      const response = await authApi.login(email, password);
+      localStorage.setItem('token', response.token);
+      const user: AuthUser = { id: response.id, email: response.email };
+      localStorage.setItem('auth_user', JSON.stringify(user));
+      set({ user });
+      await get().fetchPerfil();
+      return { error: null };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
+      return { error: msg };
+    }
   },
 
-  logout: async () => {
-    await supabase.auth.signOut();
-    set({ user: null, session: null, perfil: null });
+  logout: () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('auth_user');
+    set({ user: null, perfil: null });
   },
 
   fetchPerfil: async () => {
-    const userId = get().user?.id;
-    if (!userId) return;
-
-    const { data, error } = await supabase
-      .from('perfiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-
-    if (data && !error) {
-      set({ perfil: data as Perfil });
+    try {
+      const perfil = await perfilApi.getMe();
+      set({ perfil });
+    } catch (err) {
+      console.error('Error al cargar perfil:', err);
     }
   },
 }));
