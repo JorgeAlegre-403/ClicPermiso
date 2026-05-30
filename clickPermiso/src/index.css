@@ -1,48 +1,54 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --color-primary-50: #f8fafc;
+  --color-primary-100: #f1f5f9;
+  --color-primary-200: #e2e8f0;
+  --color-primary-300: #cbd5e1;
+  --color-primary-400: #94a3b8;
+  --color-primary-500: #64748b;
+  --color-primary-600: #475569;
+  --color-primary-700: #334155;
+  --color-primary-800: #1e293b;
+  --color-primary-900: #0f172a;
+  --color-primary-950: #020617;
 }
 
-/* ===== GLOBAL RESET ===== */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html, body {
-  height: 100%;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  color: #0f172a;
+  background-color: #ffffff;
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #ffffff; /* Fondo blanco puro y limpio */
-  color: #334155;
+  margin: 0;
+  background-color: #f8fafc;
+  color: #1e293b;
 }
 
-/* ===== SCROLLBAR MINIMALISTA ===== */
+.glass-card {
+  @apply bg-white border border-slate-200 shadow-sm;
+}
+
+.btn-primary {
+  @apply bg-slate-900 text-white font-semibold py-2 px-4 rounded-lg hover:bg-slate-800 transition-colors duration-200 disabled:opacity-50;
+}
+
+.animate-fade-in {
+  opacity: 1; /* Simplificado: sin animación pesada */
+}
+
+/* Scrollbar minimalista */
 ::-webkit-scrollbar {
-  width: 4px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
+  width: 5px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #e2e8f0;
-  border-radius: 4px;
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #cbd5e1;
-}
-
-/* ===== ENFOQUE ===== */
-:focus-visible {
-  outline: 2px solid #93c5fd;
-  outline-offset: 1px;
 }
